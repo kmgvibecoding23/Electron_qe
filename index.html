@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вход — Электронная очередь на налив</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-grid">
+      <form class="login-card" id="loginForm" novalidate>
+        <div style="font-size:34px">⛽</div>
+        <h1>Электронная очередь</h1>
+        <p class="muted" style="margin-top:0">на налив нефтепродуктов</p>
+        <div class="field"><label for="login">Логин</label><input id="login" name="login" autocomplete="username" required></div>
+        <div class="field"><label for="password">Пароль</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
+        <div class="form-error" id="err" hidden></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:8px;min-height:46px" type="submit">Войти</button>
+        <p class="hint" style="margin-top:14px">Регистрации нет — учётные записи создаёт администратор.</p>
+      </form>
+
+      <div class="login-card">
+        <h2>Демо-доступ</h2>
+        <p class="muted" style="margin-top:-6px">Нажмите на строку, чтобы подставить логин и пароль.</p>
+        <div class="table-wrap">
+          <table class="demo-users">
+            <thead><tr><th>Роль</th><th>Логин</th><th>Пароль</th><th>Кто это</th></tr></thead>
+            <tbody id="demoUsers"></tbody>
+          </table>
+        </div>
+        <p class="hint">Данные демонстрационные и хранятся в этом браузере. Сбросить их к исходным может администратор в разделе «Настройки».</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/pages/login.js"></script>
+</body>
+</html>

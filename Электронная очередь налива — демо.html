@@ -1,0 +1,1156 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Электронная очередь налива</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Russo+One&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF0EF; --surface:#FFFFFF; --surface-2:#F5F7F6; --ink:#162125; --muted:#5A6A6F; --line:#D3DBDA;
+  --side:#0E3B43; --side-ink:#DCE8E8; --side-muted:#8FB0B3; --side-active:#17535D;
+  --accent:#0E5E69; --accent-ink:#FFFFFF; --accent-soft:#DDEDEE;
+  --adr:#F28C00;
+  --ok:#1F7A49; --ok-bg:#E2F3E9; --warn:#8F5D00; --warn-bg:#FFF1D6; --bad:#B3261E; --bad-bg:#FBE5E3;
+  --info:#0E5E69; --info-bg:#E0EFF0; --grey:#5A6A6F; --grey-bg:#E8ECEB;
+  --radius:10px;
+  --font:'Golos Text','Segoe UI',Roboto,Arial,sans-serif;
+  --font-plate:'Russo One','Arial Black',Arial,sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1618; --surface:#162125; --surface-2:#1B282C; --ink:#E4EBEA; --muted:#97A8AB; --line:#2B3B3F;
+    --side:#0A2A30; --side-ink:#DCE8E8; --side-muted:#7FA0A3; --side-active:#14474F;
+    --accent:#4FB0BB; --accent-ink:#04191C; --accent-soft:#16363B;
+    --ok:#62C690; --ok-bg:#15301F; --warn:#E9B24C; --warn-bg:#382A10; --bad:#F2817A; --bad-bg:#3B1B19;
+    --info:#73C6CE; --info-bg:#123236; --grey:#97A8AB; --grey-bg:#223034;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1618; --surface:#162125; --surface-2:#1B282C; --ink:#E4EBEA; --muted:#97A8AB; --line:#2B3B3F;
+  --side:#0A2A30; --side-ink:#DCE8E8; --side-muted:#7FA0A3; --side-active:#14474F;
+  --accent:#4FB0BB; --accent-ink:#04191C; --accent-soft:#16363B;
+  --ok:#62C690; --ok-bg:#15301F; --warn:#E9B24C; --warn-bg:#382A10; --bad:#F2817A; --bad-bg:#3B1B19;
+  --info:#73C6CE; --info-bg:#123236; --grey:#97A8AB; --grey-bg:#223034;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;line-height:1.2;font-weight:700}
+h1{font-size:1.6rem}
+h2{font-size:1.15rem}
+h3{font-size:1rem}
+p{margin:0}
+img{max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--adr);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- layout ---------- */
+.app{display:grid;grid-template-columns:252px minmax(0,1fr);min-height:100%}
+.side{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;height:100dvh;overflow-y:auto}
+.brand{padding:22px 20px 18px;display:flex;gap:12px;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand-name{font-weight:700;font-size:.98rem;line-height:1.25}
+.brand-sub{color:var(--side-muted);font-size:.8rem}
+.nav{display:flex;flex-direction:column;padding:12px 10px;gap:2px;flex:1}
+.nav a{color:var(--side-ink);text-decoration:none;padding:9px 12px;border-radius:8px;font-weight:500;font-size:.95rem;display:flex;justify-content:space-between;align-items:center}
+.nav a:hover{background:rgba(255,255,255,.06)}
+.nav a.active{background:var(--side-active);box-shadow:inset 3px 0 0 var(--adr)}
+.nav .cnt{background:var(--adr);color:#111;font-size:.75rem;font-weight:700;border-radius:20px;padding:0 7px;min-width:22px;text-align:center}
+.side-foot{padding:14px 16px 18px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px}
+.who-name{font-weight:600;font-size:.92rem}
+.who-role{color:var(--side-muted);font-size:.8rem}
+.side-foot label{color:var(--side-muted);font-size:.78rem}
+.side-foot select{width:100%;background:rgba(255,255,255,.07);color:var(--side-ink);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:7px 8px}
+.side-foot select option{color:#111}
+.btn-out{background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--side-ink);border-radius:8px;padding:7px;cursor:pointer}
+.btn-out:hover{background:rgba(255,255,255,.07)}
+.main{min-width:0;padding:28px clamp(16px,3vw,40px) 60px}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.page-head p{color:var(--muted);margin-top:4px}
+.topbar{display:none}
+
+@media (max-width: 880px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;inset:0 auto 0 0;width:min(290px,86vw);z-index:40;transform:translateX(-102%);transition:transform .2s ease;height:100%;padding-top:env(safe-area-inset-top,0px)}
+  .side.open{transform:none}
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:39}
+  .topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:30;background:var(--side);color:var(--side-ink);padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px))}
+  .topbar button{background:none;border:1px solid rgba(255,255,255,.2);color:inherit;border-radius:8px;padding:6px 10px;cursor:pointer}
+  .main{padding-top:18px}
+}
+
+/* ---------- elements ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.card + .card{margin-top:16px}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.card-head p{color:var(--muted);font-size:.88rem}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:16px;align-items:start}
+.stack{display:flex;flex-direction:column;gap:16px}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.nowrap{white-space:nowrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:.92rem;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.btn.go{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.sm{padding:5px 10px;font-size:.84rem}
+.btn.big{padding:14px 26px;font-size:1.05rem}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap}
+.tbl-wrap{overflow-x:auto;margin:0 -20px;padding:0 20px}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th{text-align:left;color:var(--muted);font-weight:500;font-size:.82rem;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.empty{padding:28px 10px;text-align:center;color:var(--muted)}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+.filters label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+input[type=text],input[type=password],input[type=number],input[type=date],input[type=tel],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field > span{font-size:.85rem;font-weight:500}
+.field small{color:var(--muted);font-size:.8rem}
+.field input,.field select,.field textarea{width:100%}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.form-row{grid-template-columns:1fr}}
+.form-err{color:var(--bad);font-weight:500;min-height:1.2em;margin:4px 0 0}
+
+/* status */
+.st{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.8rem;font-weight:600;white-space:nowrap}
+.st-info{background:var(--info-bg);color:var(--info)}
+.st-warn{background:var(--warn-bg);color:var(--warn)}
+.st-ok{background:var(--ok-bg);color:var(--ok)}
+.st-bad{background:var(--bad-bg);color:var(--bad)}
+.st-grey{background:var(--grey-bg);color:var(--grey)}
+
+/* Russian licence plate */
+.plate{display:inline-flex;align-items:stretch;background:#fff;color:#111;border:2px solid #111;border-radius:5px;font-family:var(--font-plate);line-height:1;white-space:nowrap;box-shadow:inset 0 0 0 1px #fff, inset 0 0 0 2px #bbb}
+.pl-num{padding:4px 7px 3px;font-size:.92em;letter-spacing:.04em;display:flex;align-items:baseline}
+.pl-num b{font-weight:400;font-size:1.22em;margin:0 .08em}
+.pl-reg{border-left:2px solid #111;padding:2px 5px 1px;font-size:.8em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.pl-reg i{font-style:normal;font-family:var(--font);font-weight:700;font-size:.5em;letter-spacing:.06em;display:flex;align-items:center;gap:2px}
+.pl-reg i::after{content:"";width:9px;height:6px;background:linear-gradient(#fff 0 33%,#1c57a5 33% 66%,#d52b1e 66%);border:.5px solid #999}
+.plate.lg{font-size:1.6rem;border-width:3px}
+.plate.lg .pl-reg{border-left-width:3px}
+
+/* ADR orange plate */
+.adr{display:inline-grid;grid-template-rows:1fr 1fr;background:var(--adr);border:2px solid #111;border-radius:2px;font-family:var(--font-plate);color:#111;font-size:.68rem;line-height:1;text-align:center;width:44px;flex:none}
+.adr span{padding:2px 2px 1px}
+.adr span + span{border-top:2px solid #111}
+.prod{display:inline-flex;align-items:center;gap:10px;font-weight:600}
+
+/* toast & modal */
+#toasts{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;z-index:100;max-width:min(380px,calc(100% - 32px))}
+.toast{background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:8px;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,.25);border-left:5px solid var(--accent)}
+.toast.ok{border-left-color:#3BB273}.toast.bad{border-left-color:#E5534B}
+#modal{position:fixed;inset:0;background:rgba(5,15,18,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:80}
+#modal[hidden]{display:none}
+.modal-card{background:var(--surface);border-radius:12px;width:min(520px,100%);max-height:calc(100% - 20px);display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.modal-card.wide{width:min(760px,100%)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line)}
+.modal-body{padding:18px 20px;overflow-y:auto}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--line)}
+.icon-btn{background:none;border:0;font-size:1.1rem;cursor:pointer;color:var(--muted);padding:4px 8px;border-radius:6px}
+.icon-btn:hover{background:var(--surface-2)}
+
+/* login */
+.login{min-height:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}
+.login-brand{background:var(--side);color:var(--side-ink);padding:clamp(28px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:40px}
+.login-brand h1{font-size:clamp(1.9rem,3.6vw,2.8rem);max-width:13ch;line-height:1.1}
+.login-brand p{color:var(--side-muted);max-width:44ch;margin-top:16px}
+.flow{display:flex;flex-direction:column;gap:14px;max-width:420px}
+.flow div{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
+.flow b{font-family:var(--font-plate);font-weight:400;color:var(--adr);font-size:1.25rem;line-height:1.2}
+.flow span{color:var(--side-ink);font-size:.93rem}
+.login-panel{padding:clamp(24px,5vw,64px);display:flex;flex-direction:column;gap:22px;justify-content:center}
+.login-form{max-width:380px;width:100%}
+@media (max-width:900px){.login{grid-template-columns:1fr}}
+
+/* gate */
+.gate{display:grid;gap:16px}
+.gate-check{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.gate-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.plate-input{flex:1 1 260px;font-family:var(--font-plate);font-size:2rem;text-transform:uppercase;letter-spacing:.06em;background:#fff!important;color:#111!important;border:3px solid #111!important;border-radius:8px!important;padding:10px 16px!important}
+.plate-input::placeholder{color:#b9c0c0}
+.verdict{margin-top:18px;border-radius:var(--radius);padding:20px;border:2px solid}
+.verdict.ok{background:var(--ok-bg);border-color:var(--ok)}
+.verdict.warn{background:var(--warn-bg);border-color:var(--warn)}
+.verdict.bad{background:var(--bad-bg);border-color:var(--bad)}
+.verdict.info{background:var(--info-bg);border-color:var(--info)}
+.verdict h2{font-size:1.4rem;margin-bottom:12px}
+.verdict.ok h2{color:var(--ok)}.verdict.warn h2{color:var(--warn)}.verdict.bad h2{color:var(--bad)}.verdict.info h2{color:var(--info)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 20px;margin:16px 0}
+.facts dt{font-size:.8rem;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-weight:600}
+.posts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.posts{grid-template-columns:1fr}}
+.post{background:var(--surface-2);border-radius:8px;padding:12px}
+.post h3{display:flex;justify-content:space-between;margin-bottom:8px}
+.q-item{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.q-item + .q-item{margin-top:8px}
+.q-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.q-pos{font-family:var(--font-plate);color:var(--muted);font-size:.85rem}
+
+/* kpi & charts */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.kpi-v{font-family:var(--font-plate);font-size:1.7rem;line-height:1.15;margin-top:4px}
+.kpi-l{font-size:.85rem;color:var(--muted)}
+.kpi-s{font-size:.8rem;color:var(--muted)}
+.chart-wrap{overflow-x:auto}
+.vbars{display:flex;gap:4px;align-items:flex-end;height:210px;min-width:max-content}
+.vb{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;width:30px}
+.vb-v{font-size:.72rem;color:var(--muted);margin-bottom:2px;font-variant-numeric:tabular-nums}
+.vb-bar{width:20px;background:var(--accent);border-radius:3px 3px 0 0}
+.vb-l{font-size:.68rem;color:var(--muted);margin-top:4px;white-space:nowrap}
+.hbars{display:flex;flex-direction:column;gap:10px}
+.hb{display:grid;grid-template-columns:minmax(90px,150px) 1fr minmax(60px,auto);gap:10px;align-items:center;font-size:.9rem}
+.hb-track{background:var(--surface-2);border-radius:4px;height:16px;overflow:hidden}
+.hb-bar{height:100%;background:var(--accent);border-radius:4px}
+.hb-v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.meter{height:10px;background:var(--surface-2);border-radius:6px;overflow:hidden;display:flex;min-width:120px}
+.meter i{display:block;height:100%}
+.m-ship{background:var(--ok)}.m-book{background:var(--adr)}
+.legend{display:flex;gap:14px;font-size:.8rem;color:var(--muted);flex-wrap:wrap}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;background:var(--c)}
+
+.notice{border-radius:8px;padding:12px 14px;margin-bottom:16px;border:1px solid}
+.notice.bad{background:var(--bad-bg);border-color:var(--bad);color:var(--ink)}
+.notice.info{background:var(--info-bg);border-color:var(--info)}
+.limit{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.limit .meter{flex:1;min-width:180px;height:12px}
+
+.jr{display:grid;grid-template-columns:minmax(200px,1.4fr) minmax(120px,.8fr) minmax(160px,1fr) auto;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.jr:last-child{border-bottom:0}
+.jr-free{font-family:var(--font-plate);font-size:1.35rem}
+@media (max-width:760px){.jr{grid-template-columns:1fr 1fr}.jr > :last-child{grid-column:1/-1}}
+textarea.csv{width:100%;height:260px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal" hidden></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+/* ================= helpers ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const dstr = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const dtstr = d => `${dstr(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const today = () => dstr(new Date());
+const nowStr = () => dtstr(new Date());
+const addDays = (s, n) => { const d = new Date(s + 'T00:00'); d.setDate(d.getDate() + n); return dstr(d); };
+const addMin = (s, n) => { const d = new Date(s); d.setMinutes(d.getMinutes() + n); return dtstr(d); };
+const minsBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 60000);
+const fmtD = s => s ? `${s.slice(8,10)}.${s.slice(5,7)}.${s.slice(0,4)}` : '—';
+const fmtDT = s => s ? `${fmtD(s.slice(0,10))} ${s.slice(11,16)}` : '—';
+const fmtTime = s => s ? s.slice(11,16) : '—';
+const fmtT = v => `${(Math.round(v*10)/10).toLocaleString('ru-RU')} т`;
+const dur = m => { if (m == null || isNaN(m)) return '—'; const h = Math.floor(m/60), mm = m % 60; return h ? `${h} ч ${mm} мин` : `${mm} мин`; };
+const uid = p => p + Math.random().toString(36).slice(2, 10);
+const rng = seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+const LAT = {A:'А',B:'В',E:'Е',K:'К',M:'М',H:'Н',O:'О',P:'Р',C:'С',T:'Т',Y:'У',X:'Х'};
+const normPlate = s => String(s || '').toUpperCase().replace(/Ё/g,'Е').replace(/[^0-9A-ZА-Я]/g, '').replace(/[ABEKMHOPCTYX]/g, c => LAT[c]);
+
+const ROLE = {admin:'Администратор', guard:'Охранник', trustee:'Доверенное лицо', lab:'Товарная лаборатория'};
+const ST = {booked:['Забронирована','info'], entered:['На территории','warn'], exited:['Выехала','ok'], cancelled:['Отменена','grey'], no_show:['Неявка','bad']};
+const ACTIVE = ['booked', 'entered'];
+const badge = s => `<span class="st st-${ST[s][1]}">${ST[s][0]}</span>`;
+
+/* ================= storage ================= */
+const KEY = 'eq-demo-db-v1', SKEY = 'eq-demo-session-v1';
+let DB = null;
+let MEM_SESSION = null;
+function save() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {} }
+function load() {
+  try { const s = localStorage.getItem(KEY); if (s) DB = JSON.parse(s); } catch (e) { DB = null; }
+  if (!DB || !DB.users) { DB = seed(); save(); }
+}
+function getSession() { try { return localStorage.getItem(SKEY) || MEM_SESSION; } catch (e) { return MEM_SESSION; } }
+function setSession(id) { MEM_SESSION = id; try { id ? localStorage.setItem(SKEY, id) : localStorage.removeItem(SKEY); } catch (e) {} }
+
+const U = id => DB.users.find(x => x.id === id);
+const P = id => DB.products.find(x => x.id === id);
+const BT = id => DB.batches.find(x => x.id === id);
+const TR = id => DB.trucks.find(x => x.id === id);
+const KB = id => DB.bookings.find(x => x.id === id);
+const prodOfBooking = k => P(BT(k.batchId).productId);
+
+function ev(entity, entityId, action, text, userId = CUR?.id ?? null, ts = nowStr()) {
+  DB.events.push({id: uid('e'), ts, userId, entity, entityId, action, text});
+}
+
+/* ================= seed demo data ================= */
+function seed() {
+  const T = today(), r = rng(20261007);
+  const ri = (a, b) => a + Math.floor(r() * (b - a + 1));
+  const at = (d, h, m) => `${d}T${pad(h)}:${pad(m)}`;
+  const db = {
+    settings: {limit: 100, noShowLimit: 3, noShowPeriod: 30, banDays: 7, dailyTrucks: 40, bookAhead: 14},
+    users: [], products: [], batches: [], trucks: [], bookings: [], events: [], seq: 0, bseq: 0
+  };
+  const E = (ts, userId, entity, entityId, action, text) => db.events.push({id: uid('e'), ts, userId, entity, entityId, action, text});
+  const mkU = (id, login, password, name, role, org, phone, extra = {}) =>
+    db.users.push({id, login, password, name, role, org, phone, blocked: false, bannedUntil: null, sanctionResetAt: null, createdAt: at(addDays(T,-45), 9, 0), ...extra});
+  mkU('u1','admin','admin123','Соколов Андрей Викторович','admin','Нефтебаза','+7 900 100-10-01');
+  mkU('u2','guard','guard123','Кравцов Игорь Сергеевич','guard','Служба охраны, КПП-1','+7 900 100-10-02');
+  mkU('u3','lab','lab123','Белова Марина Олеговна','lab','Товарная лаборатория','+7 900 100-10-03');
+  mkU('u4','transneft','trans123','Миронов Олег Петрович','trustee','ООО «ТрансНефтеСервис»','+7 916 555-21-40');
+  mkU('u5','severput','sever123','Гусева Наталья Ивановна','trustee','ООО «Северный путь»','+7 921 340-88-12');
+  mkU('u6','petrov','petrov123','Петров Алексей Николаевич','trustee','ИП Петров А. Н.','+7 911 702-15-63',
+      {bannedUntil: addDays(T, 4), sanctionResetAt: addDays(T, -2)});
+  db.users.forEach(u => E(u.createdAt, 'u1', 'user', u.id, 'create', `Создана учётная запись ${u.login} (${ROLE[u.role]})`));
+
+  [['p1','АИ-92','33','1203'],['p2','АИ-95','33','1203'],['p3','ДТ летнее','30','1202'],['p4','ДТ зимнее','30','1202'],['p5','ТС-1 (авиакеросин)','30','1863'],['p6','Мазут М-100','30','1268']]
+    .forEach(([id,name,hz,un]) => db.products.push({id, name, hz, un, active: true}));
+
+  const mkB = (id, productId, quantity, from, passport, status = 'open', createdAt) => {
+    db.batches.push({id, no: 'П-' + String(++db.bseq).padStart(3,'0'), productId, quantity, availableFrom: from, passport, comment: '', status, createdBy: 'u3', createdAt: createdAt || at(addDays(from,-1), 16, 20)});
+  };
+  mkB('b6','p1',0,  addDays(T,-20),'ПК-0412','closed');
+  mkB('b2','p2',400,addDays(T,-15),'ПК-0418');
+  mkB('b3','p3',800,addDays(T,-15),'ПК-0419');
+  mkB('b7','p6',250,addDays(T,-14),'ПК-0421');
+  mkB('b5','p5',180,addDays(T,-12),'ПК-0425');
+  mkB('b1','p1',600,addDays(T,-6), 'ПК-0433');
+  mkB('b4','p4',300,addDays(T,1),  'ПК-0440','open', at(T, 8, 40));
+
+  const mkT = (id, ownerId, plate, trailer, model, tank, driver, phone) =>
+    db.trucks.push({id, ownerId, plate: normPlate(plate), trailer: normPlate(trailer), model, tank, driver, driverPhone: phone, active: true});
+  mkT('t1','u4','А123ВС77','АВ1234 77','МАЗ-6430 + Grunwald',28,'Кузнецов Дмитрий','+7 916 201-11-01');
+  mkT('t2','u4','Х450КМ77','ЕК4561 77','КАМАЗ-65116 + ППЦ-30',30,'Лебедев Сергей','+7 916 201-11-02');
+  mkT('t3','u4','Т777ОР50','ВН7890 50','Volvo FH + Schwarzmüller',30,'Орлов Павел','+7 916 201-11-03');
+  mkT('t4','u4','Е902НУ77','АМ3210 77','Scania R450 + Feldbinder',24,'Фёдоров Иван','+7 916 201-11-04');
+  mkT('t5','u5','О512ТТ29','АР6543 29','КАМАЗ-5490 + Sespel',26,'Никитин Роман','+7 921 402-22-01');
+  mkT('t6','u5','М308АР29','АХ9870 29','MAN TGS + Тонар',26,'Смирнов Андрей','+7 921 402-22-02');
+  mkT('t7','u5','К640ЕН29','ВК2468 29','Volvo FM + Kässbohrer',20,'Попов Виктор','+7 921 402-22-03');
+  mkT('t8','u6','В215СХ35','АО1357 35','МАЗ-5440 + ППЦ-28',25,'Петров Алексей','+7 911 702-15-63');
+  mkT('t9','u6','Н880РО35','АС8642 35','DAF XF + Kässbohrer',22,'Сидоров Максим','+7 911 702-15-64');
+  db.trucks.forEach(t => E(at(addDays(T,-40), 11, 10), t.ownerId, 'truck', t.id, 'create', `Добавлена машина ${t.plate}`));
+
+  const pName = pid => db.products.find(p => p.id === pid).name;
+  const batchFor = (pid, d) => ({p1: d < -6 ? 'b6' : 'b1', p2: 'b2', p3: 'b3', p5: 'b5', p6: 'b7'})[pid];
+  const mkK = o => {
+    const k = {id: uid('k'), no: 'Б-' + String(++db.seq).padStart(4,'0'), post: null, enteredAt: null, enteredBy: null, exitedAt: null, exitedBy: null, cancelledAt: null, ...o};
+    db.bookings.push(k);
+    const tr = db.trucks.find(t => t.id === k.truckId);
+    E(k.createdAt, k.trusteeId, 'booking', k.id, 'create', `Бронь ${k.no}: ${tr.plate}, ${pName(db.batches.find(b=>b.id===k.batchId).productId)} ${k.volume} т на ${fmtD(k.date)}`);
+    return k;
+  };
+  const enterExit = (k, enteredAt, exitedAt, post) => {
+    const tr = db.trucks.find(t => t.id === k.truckId);
+    k.post = post; k.enteredAt = enteredAt; k.enteredBy = 'u2'; k.status = 'entered';
+    E(enteredAt, 'u2', 'booking', k.id, 'enter', `${tr.plate} въехала, пост ${post} (бронь ${k.no})`);
+    if (exitedAt) { k.exitedAt = exitedAt; k.exitedBy = 'u2'; k.status = 'exited'; E(exitedAt, 'u2', 'booking', k.id, 'exit', `${tr.plate} выехала, отгружено ${k.volume} т (бронь ${k.no})`); }
+  };
+  const petrovPlan = {'-13':['t8','p3','exit'], '-12':['t9','p2','no_show'], '-8':['t8','p1','no_show'], '-6':['t9','p1','exit'], '-3':['t8','p3','no_show']};
+  const pool = ['t1','t2','t3','t4','t5','t6','t7'];
+  const pick = ['p1','p1','p1','p2','p2','p3','p3','p3','p5','p6'];
+
+  for (let d = -13; d <= -1; d++) {
+    const date = addDays(T, d), posts = [0, 0];
+    const list = [...pool].sort(() => r() - 0.5).slice(0, ri(3, 5)).map(t => [t, null, 'exit']);
+    if (petrovPlan[d]) list.push(petrovPlan[d]);
+    list.forEach(([tid, forcedP, plan]) => {
+      const tr = db.trucks.find(t => t.id === tid);
+      let pid = forcedP || pick[ri(0, pick.length - 1)];
+      if (pid === 'p5' && d < -12) pid = 'p3';
+      const k = mkK({batchId: batchFor(pid, d), truckId: tid, trusteeId: tr.ownerId, volume: tr.tank - ri(0, 2), date, status: 'booked', createdAt: at(addDays(date, -ri(1, 2)), ri(9, 17), ri(0, 59))});
+      if (plan === 'no_show') {
+        k.status = 'no_show';
+        E(at(addDays(date, 1), 0, 5), null, 'booking', k.id, 'no_show', `Бронь ${k.no}: неявка ${tr.plate}`);
+        return;
+      }
+      if (!forcedP && r() < 0.08) {
+        k.status = 'cancelled'; k.cancelledAt = addMin(k.createdAt, ri(60, 600));
+        E(k.cancelledAt, tr.ownerId, 'booking', k.id, 'cancel', `Бронь ${k.no} отменена доверенным лицом`);
+        return;
+      }
+      const post = posts[0] <= posts[1] ? 1 : 2; posts[post - 1]++;
+      const ent = at(date, ri(8, 17), ri(0, 59));
+      enterExit(k, ent, addMin(ent, ri(40, 115)), post);
+    });
+  }
+  E(at(addDays(T, -2), 0, 6), null, 'user', 'u6', 'ban', `ИП Петров А. Н.: 3 неявки за 30 дней, бронирование ограничено до ${fmtD(addDays(T, 4))}`);
+
+  // today's live picture
+  const now = nowStr(), clamp = s => s.slice(0, 10) < T ? at(T, 0, 5) : s;
+  const y = addDays(T, -1);
+  let k = mkK({batchId:'b1', truckId:'t5', trusteeId:'u5', volume:26, date:T, status:'booked', createdAt: at(y, 14, 12)});
+  let e1 = clamp(addMin(now, -185)), x1 = clamp(addMin(now, -98)); if (x1 <= e1) x1 = addMin(e1, 50);
+  enterExit(k, e1, x1, 1);
+  k = mkK({batchId:'b2', truckId:'t2', trusteeId:'u4', volume:30, date:T, status:'booked', createdAt: at(y, 10, 47)});
+  enterExit(k, clamp(addMin(now, -72)), null, 1);
+  k = mkK({batchId:'b3', truckId:'t7', trusteeId:'u5', volume:20, date:T, status:'booked', createdAt: at(y, 15, 3)});
+  enterExit(k, clamp(addMin(now, -38)), null, 2);
+  mkK({batchId:'b3', truckId:'t3', trusteeId:'u4', volume:30, date:T, status:'booked', createdAt: at(y, 11, 30)});
+  mkK({batchId:'b1', truckId:'t6', trusteeId:'u5', volume:25, date:T, status:'booked', createdAt: at(y, 16, 55)});
+  mkK({batchId:'b1', truckId:'t4', trusteeId:'u4', volume:24, date:addDays(T,1), status:'booked', createdAt: at(T, 7, 50)});
+  mkK({batchId:'b4', truckId:'t5', trusteeId:'u5', volume:26, date:addDays(T,2), status:'booked', createdAt: at(T, 8, 55)});
+
+  // fit batch volumes to the generated history
+  db.batches.forEach(b => {
+    const used = db.bookings.filter(k => k.batchId === b.id && ['booked','entered','exited'].includes(k.status)).reduce((s, k) => s + k.volume, 0);
+    b.quantity = b.status === 'closed' ? used : Math.max(b.quantity, Math.ceil((used + 140) / 10) * 10);
+    E(b.createdAt, 'u3', 'batch', b.id, 'create', `Партия ${b.no}: ${pName(b.productId)} ${b.quantity} т, выдача с ${fmtD(b.availableFrom)}`);
+    if (b.status === 'closed') E(at(addDays(T, -7), 18, 0), 'u3', 'batch', b.id, 'close', `Партия ${b.no} закрыта: отгружена полностью`);
+  });
+  return db;
+}
+
+/* ================= domain logic ================= */
+function batchStats(b) {
+  let booked = 0, shipped = 0;
+  for (const k of DB.bookings) if (k.batchId === b.id) {
+    if (ACTIVE.includes(k.status)) booked += k.volume; else if (k.status === 'exited') shipped += k.volume;
+  }
+  return {booked, shipped, free: Math.round((b.quantity - booked - shipped) * 10) / 10};
+}
+const trusteeActive = id => DB.bookings.filter(k => k.trusteeId === id && ACTIVE.includes(k.status)).reduce((s, k) => s + k.volume, 0);
+const isBanned = u => !!(u && u.bannedUntil && u.bannedUntil >= today());
+const noShowsPeriod = u => { const from = addDays(today(), -DB.settings.noShowPeriod); return DB.bookings.filter(k => k.trusteeId === u.id && k.status === 'no_show' && k.date >= from).length; };
+const noShowsCounter = u => { const from = addDays(today(), -DB.settings.noShowPeriod); return DB.bookings.filter(k => k.trusteeId === u.id && k.status === 'no_show' && k.date >= from && (!u.sanctionResetAt || k.date > u.sanctionResetAt)).length; };
+
+function checkSanction(userId) {
+  const u = U(userId); if (!u || isBanned(u)) return;
+  if (noShowsCounter(u) >= DB.settings.noShowLimit) {
+    u.bannedUntil = addDays(today(), DB.settings.banDays); u.sanctionResetAt = today();
+    ev('user', u.id, 'ban', `${u.org}: ${DB.settings.noShowLimit} неявки за ${DB.settings.noShowPeriod} дней, бронирование ограничено до ${fmtD(u.bannedUntil)}`, null);
+  }
+}
+function processNoShows() {
+  const T = today(); let changed = false;
+  DB.bookings.filter(k => k.status === 'booked' && k.date < T).sort((a, b) => a.date.localeCompare(b.date)).forEach(k => {
+    k.status = 'no_show'; changed = true;
+    ev('booking', k.id, 'no_show', `Бронь ${k.no}: неявка ${TR(k.truckId).plate}`, null);
+    checkSanction(k.trusteeId);
+  });
+  if (changed) save();
+}
+const onTerritory = () => DB.bookings.filter(k => k.status === 'entered').sort((a, b) => a.enteredAt.localeCompare(b.enteredAt));
+
+function doEnter(id) {
+  const k = KB(id); if (!k || k.status !== 'booked') return toast('Эта бронь уже обработана', 'bad');
+  const load = [1, 2].map(p => onTerritory().filter(x => x.post === p).length);
+  k.post = load[0] <= load[1] ? 1 : 2; k.status = 'entered'; k.enteredAt = nowStr(); k.enteredBy = CUR.id;
+  const pos = onTerritory().filter(x => x.post === k.post).length;
+  ev('booking', k.id, 'enter', `${TR(k.truckId).plate} въехала, пост ${k.post} (бронь ${k.no})`);
+  save(); toast(`Въехала: пост ${k.post}, место в очереди поста ${pos}`, 'ok'); render();
+}
+function doExit(id) {
+  const k = KB(id); if (!k || k.status !== 'entered') return;
+  k.status = 'exited'; k.exitedAt = nowStr(); k.exitedBy = CUR.id;
+  ev('booking', k.id, 'exit', `${TR(k.truckId).plate} выехала, отгружено ${k.volume} т (бронь ${k.no})`);
+  save(); toast(`${TR(k.truckId).plate} выехала`, 'ok'); render();
+}
+function doCancel(id) {
+  const k = KB(id); if (!k || k.status !== 'booked') return;
+  confirmModal(`Отменить бронь ${k.no}?`, `Машина ${TR(k.truckId).plate}, ${prodOfBooking(k).name} ${k.volume} т на ${fmtD(k.date)}. Объём вернётся в свободный остаток.`, 'Отменить бронь', () => {
+    k.status = 'cancelled'; k.cancelledAt = nowStr();
+    ev('booking', k.id, 'cancel', `Бронь ${k.no} отменена (${CUR.role === 'admin' ? 'администратором' : 'доверенным лицом'})`);
+    save(); toast('Бронь отменена'); render();
+  });
+}
+
+/* ================= UI primitives ================= */
+function toast(msg, kind = '') {
+  const t = document.createElement('div'); t.className = 'toast ' + kind; t.textContent = msg;
+  $('#toasts').appendChild(t); setTimeout(() => t.remove(), 3600);
+}
+function openModal({title, body, ok = 'Сохранить', onOk, wide, okClass = 'primary', mount}) {
+  const m = $('#modal');
+  m.innerHTML = `<div class="modal-card ${wide ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <div class="modal-head"><h2>${esc(title)}</h2><button class="icon-btn" data-close aria-label="Закрыть">✕</button></div>
+    <div class="modal-body">${body}<p class="form-err" id="m-err"></p></div>
+    ${onOk ? `<div class="modal-foot"><button class="btn" data-close>Закрыть</button><button class="btn ${okClass}" id="m-ok">${esc(ok)}</button></div>` : ''}
+  </div>`;
+  m.hidden = false;
+  m.querySelectorAll('[data-close]').forEach(b => b.onclick = closeModal);
+  m.onmousedown = e => { if (e.target === m) closeModal(); };
+  if (onOk) $('#m-ok').onclick = () => { const res = onOk(); if (typeof res === 'string') $('#m-err').textContent = res; else closeModal(); };
+  if (mount) mount(m);
+  const f = m.querySelector('.modal-body input, .modal-body select, .modal-body textarea'); if (f) f.focus();
+}
+function closeModal() { $('#modal').hidden = true; $('#modal').innerHTML = ''; }
+function confirmModal(title, text, ok, fn) { openModal({title, body: `<p>${esc(text)}</p>`, ok, okClass: 'danger', onOk: () => { fn(); }}); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
+
+const fld = (label, input, hint = '') => `<label class="field"><span>${label}</span>${input}${hint ? `<small>${hint}</small>` : ''}</label>`;
+const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+const opts = (list, sel) => list.map(([v, t]) => `<option value="${esc(v)}" ${String(v) === String(sel) ? 'selected' : ''}>${esc(t)}</option>`).join('');
+
+function plateHTML(p, big) {
+  const c = big ? ' lg' : '';
+  let m = (p || '').match(/^([А-Я])(\d{3})([А-Я]{2})(\d{2,3})$/);
+  if (m) return `<span class="plate${c}"><span class="pl-num">${m[1]}<b>${m[2]}</b>${m[3]}</span><span class="pl-reg">${m[4]}<i>RUS</i></span></span>`;
+  m = (p || '').match(/^([А-Я]{2})(\d{4})(\d{2,3})$/);
+  if (m) return `<span class="plate${c}"><span class="pl-num">${m[1]}<b>${m[2]}</b></span><span class="pl-reg">${m[3]}<i>RUS</i></span></span>`;
+  return `<span class="plate${c}"><span class="pl-num">${esc(p || '—')}</span></span>`;
+}
+const adr = p => `<span class="adr" title="Табличка опасного груза: ${p.hz} / UN ${p.un}"><span>${esc(p.hz)}</span><span>${esc(p.un)}</span></span>`;
+const prodHTML = p => `<span class="prod">${adr(p)}${esc(p.name)}</span>`;
+
+function vbars(items) {
+  const max = Math.max(1, ...items.map(i => i.value));
+  return `<div class="chart-wrap"><div class="vbars">${items.map(i => `<div class="vb" title="${esc(i.label)}: ${i.value}"><span class="vb-v">${i.value || ''}</span><span class="vb-bar" style="height:${Math.round(i.value / max * 160)}px"></span><span class="vb-l">${esc(i.label)}</span></div>`).join('')}</div></div>`;
+}
+function hbars(items, fmt = v => v) {
+  const max = Math.max(1, ...items.map(i => i.value));
+  return `<div class="hbars">${items.map(i => `<div class="hb"><span>${esc(i.label)}</span><span class="hb-track"><span class="hb-bar" style="display:block;width:${i.value / max * 100}%"></span></span><span class="hb-v">${fmt(i.value)}</span></div>`).join('')}</div>`;
+}
+function csvModal(title, rows) {
+  const text = rows.map(r => r.map(c => { const s = String(c ?? ''); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }).join(';')).join('\n');
+  openModal({title, wide: true, body: `<p class="muted small" style="margin-bottom:10px">Скопируйте текст и вставьте в Excel или сохраните как .csv (разделитель — точка с запятой).</p><textarea class="csv" id="csv-t" readonly>${esc(text)}</textarea>`,
+    ok: 'Скопировать', onOk: () => {
+      const t = $('#csv-t'); t.select();
+      try { navigator.clipboard.writeText(t.value).then(() => toast('Скопировано', 'ok'), () => { document.execCommand('copy'); toast('Скопировано', 'ok'); }); }
+      catch (e) { try { document.execCommand('copy'); toast('Скопировано', 'ok'); } catch (_) {} }
+      return '';
+    }});
+}
+
+/* ================= routing & shell ================= */
+let CUR = null;
+const S = {gateQ: '', anPeriod: '14', bkDate: null, bkStatus: '', bkOrg: '', bkQ: '', myFilter: 'active', evQ: ''};
+const NAV = [
+  {id:'analytics', t:'Аналитика', roles:['admin']},
+  {id:'gate', t:'Контроль въезда', roles:['admin','guard'], count: () => onTerritory().length},
+  {id:'bookings', t:'Брони и очередь', roles:['admin']},
+  {id:'journal', t:'Журнал продуктов', roles:['admin','trustee','lab']},
+  {id:'mybookings', t:'Мои брони', roles:['trustee'], count: () => DB.bookings.filter(k => k.trusteeId === CUR.id && ACTIVE.includes(k.status)).length},
+  {id:'trucks', t:'Машины', tTrustee:'Мои машины', roles:['admin','trustee']},
+  {id:'batches', t:'Партии продукта', roles:['admin','lab']},
+  {id:'users', t:'Пользователи', roles:['admin']},
+  {id:'products', t:'Нефтепродукты', roles:['admin']},
+  {id:'events', t:'Журнал событий', roles:['admin']},
+  {id:'settings', t:'Настройки', roles:['admin']},
+];
+const HOME = {admin:'analytics', guard:'gate', trustee:'journal', lab:'batches'};
+const PAGES = {};
+
+function login(userId) {
+  setSession(userId); CUR = U(userId); processNoShows();
+  location.hash = '#/' + HOME[CUR.role]; render();
+}
+function logout() { setSession(null); CUR = null; S.gateQ = ''; location.hash = ''; render(); }
+
+function render() {
+  const sid = getSession();
+  CUR = sid ? U(sid) : null;
+  if (CUR && CUR.blocked) { setSession(null); CUR = null; }
+  if (!CUR) return pageLogin();
+  let route = (location.hash.replace(/^#\/?/, '') || HOME[CUR.role]).split('?')[0];
+  const item = NAV.find(n => n.id === route);
+  if (!item || !item.roles.includes(CUR.role)) { route = HOME[CUR.role]; history.replaceState(null, '', '#/' + route); }
+  const page = PAGES[route]();
+  const nav = NAV.filter(n => n.roles.includes(CUR.role)).map(n => {
+    const c = n.count ? n.count() : 0;
+    return `<a href="#/${n.id}" class="${n.id === route ? 'active' : ''}">${esc(CUR.role === 'trustee' && n.tTrustee ? n.tTrustee : n.t)}${c ? `<span class="cnt">${c}</span>` : ''}</a>`;
+  }).join('');
+  $('#app').innerHTML = `
+    <div class="topbar"><button id="menu-btn" aria-label="Меню">☰ Меню</button><strong>${esc(page.title)}</strong></div>
+    <div class="app">
+      <aside class="side" id="side">
+        <div class="brand">${adr({hz:'33', un:'1203'})}<div><div class="brand-name">Электронная очередь налива</div><div class="brand-sub">Нефтебаза, посты налива 1 и 2</div></div></div>
+        <nav class="nav">${nav}</nav>
+        <div class="side-foot">
+          <div><div class="who-name">${esc(CUR.name)}</div><div class="who-role">${esc(ROLE[CUR.role])}${CUR.role === 'trustee' ? ', ' + esc(CUR.org) : ''}</div></div>
+          <label for="demo-switch">Быстро войти под другой ролью</label>
+          <select id="demo-switch">${DB.users.filter(u => !u.blocked).map(u => `<option value="${u.id}" ${u.id === CUR.id ? 'selected' : ''}>${esc(ROLE[u.role])}: ${esc(u.role === 'trustee' ? u.org : u.login)}</option>`).join('')}</select>
+          <button class="btn-out" id="logout">Выйти</button>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="page-head"><div><h1>${esc(page.title)}</h1>${page.sub ? `<p>${page.sub}</p>` : ''}</div>${page.actions || ''}</div>
+        ${page.html}
+      </main>
+    </div>`;
+  $('#logout').onclick = logout;
+  $('#demo-switch').onchange = e => login(e.target.value);
+  $('#menu-btn').onclick = () => { $('#side').classList.add('open'); const s = document.createElement('div'); s.className = 'scrim'; s.onclick = () => { $('#side').classList.remove('open'); s.remove(); }; document.body.appendChild(s); };
+  document.querySelectorAll('.scrim').forEach(s => s.remove());
+  if (page.after) page.after();
+}
+window.addEventListener('hashchange', render);
+
+/* delegated actions */
+const ACT = {};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const fn = ACT[el.dataset.act]; if (fn) { e.preventDefault(); fn(el.dataset.id, el); }
+});
+
+/* ================= login ================= */
+function pageLogin() {
+  const demo = DB.users.map(u => `<tr>
+      <td>${esc(ROLE[u.role])}${u.blocked ? ' <span class="st st-grey">заблокирован</span>' : ''}</td>
+      <td>${esc(u.role === 'trustee' ? u.org : u.name)}${isBanned(u) ? `<br><span class="st st-bad">ограничен до ${fmtD(u.bannedUntil)}</span>` : ''}</td>
+      <td><code>${esc(u.login)}</code></td><td><code>${esc(u.password)}</code></td>
+      <td><button class="btn sm" data-act="quick" data-id="${u.id}" ${u.blocked ? 'disabled' : ''}>Войти</button></td></tr>`).join('');
+  $('#app').innerHTML = `<div class="login">
+    <section class="login-brand">
+      <div>${adr({hz:'33', un:'1203'})}
+        <h1 style="margin-top:28px">Электронная очередь налива</h1>
+        <p>Запись автоцистерн на отгрузку нефтепродуктов и контроль въезда на два поста налива.</p>
+      </div>
+      <div class="flow">
+        <div><b>1</b><span>Лаборатория вносит, сколько продукта готово к выдаче.</span></div>
+        <div><b>2</b><span>Доверенное лицо бронирует свою машину на продукт и дату.</span></div>
+        <div><b>3</b><span>Охранник находит номер в системе и отмечает въезд, машина встаёт в живую очередь поста.</span></div>
+        <div><b>4</b><span>После налива охранник отмечает выезд, администратор видит всё в аналитике.</span></div>
+      </div>
+    </section>
+    <section class="login-panel">
+      <div class="login-form">
+        <h2 style="margin-bottom:16px">Вход в систему</h2>
+        ${fld('Логин', '<input type="text" id="l-login" autocomplete="username">')}
+        ${fld('Пароль', '<input type="password" id="l-pass" autocomplete="current-password">')}
+        <p class="form-err" id="l-err"></p>
+        <button class="btn primary" id="l-btn" style="width:100%;padding:11px">Войти</button>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Демо-доступы</h2><p>Учётные записи созданы для показа системы. Нажмите «Войти», чтобы зайти без ввода пароля.</p></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Роль</th><th>Пользователь</th><th>Логин</th><th>Пароль</th><th></th></tr></thead><tbody>${demo}</tbody></table></div>
+      </div>
+      <p class="small muted">Данные хранятся в этом браузере. <button class="btn sm" data-act="reset">Сбросить демо-данные</button></p>
+    </section></div>`;
+  const go = () => {
+    const u = DB.users.find(x => x.login.toLowerCase() === val('l-login').toLowerCase());
+    if (!u || u.password !== $('#l-pass').value) return $('#l-err').textContent = 'Неверный логин или пароль';
+    if (u.blocked) return $('#l-err').textContent = 'Учётная запись заблокирована. Обратитесь к администратору';
+    login(u.id);
+  };
+  $('#l-btn').onclick = go;
+  $('#l-pass').onkeydown = e => { if (e.key === 'Enter') go(); };
+  $('#l-login').onkeydown = e => { if (e.key === 'Enter') $('#l-pass').focus(); };
+}
+ACT.quick = id => login(id);
+ACT.reset = () => confirmModal('Сбросить демо-данные?', 'Все изменения будут удалены, система вернётся к исходному демонстрационному состоянию с датами относительно сегодняшнего дня.', 'Сбросить', () => {
+  DB = seed(); save(); toast('Демо-данные восстановлены', 'ok'); render();
+});
+
+/* ================= gate (guard) ================= */
+PAGES.gate = () => {
+  const T = today(), terr = onTerritory();
+  const postCol = p => {
+    const list = terr.filter(k => k.post === p);
+    return `<div class="post"><h3><span>Пост ${p}</span><span class="muted small">${list.length ? list.length + ' на территории' : 'свободен'}</span></h3>
+      ${list.map((k, i) => { const t = TR(k.truckId), pr = prodOfBooking(k);
+        return `<div class="q-item"><div class="q-top"><span class="q-pos">${i === 0 ? 'на наливе' : 'в очереди ' + (i + 1)}</span><span class="small muted">въехала ${fmtTime(k.enteredAt)}, ${dur(minsBetween(k.enteredAt, nowStr()))}</span></div>
+          <div class="q-top">${plateHTML(t.plate)}<span class="small">${esc(U(k.trusteeId).org)}</span></div>
+          <div class="q-top">${prodHTML(pr)}<strong>${fmtT(k.volume)}</strong></div>
+          <button class="btn go" data-act="exit" data-id="${k.id}">Выехала</button></div>`; }).join('') || '<p class="muted small">Нет машин</p>'}</div>`;
+  };
+  const expected = DB.bookings.filter(k => k.date === T && k.status === 'booked');
+  const done = DB.bookings.filter(k => k.status === 'exited' && k.exitedAt && k.exitedAt.startsWith(T));
+  return {
+    title: 'Контроль въезда',
+    sub: `${fmtD(T)}. Ожидается ${expected.length}, на территории ${terr.length}, выехало ${done.length}`,
+    html: `<div class="gate">
+      <div class="gate-check">
+        <label for="g-plate"><strong>Госномер тягача или прицепа</strong> <span class="muted small">можно латиницей и с пробелами</span></label>
+        <div class="gate-row"><input id="g-plate" class="plate-input" type="text" placeholder="А123ВС77" autocomplete="off" value="${esc(S.gateQ)}"><button class="btn primary big" id="g-btn">Проверить</button></div>
+        <div id="g-res"></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="card-head"><div><h2>На территории</h2><p>Живая очередь по постам в порядке въезда</p></div></div><div class="posts">${postCol(1)}${postCol(2)}</div></div>
+        <div class="card"><div class="card-head"><div><h2>Ожидаются сегодня</h2><p>Брони на ${fmtD(T)} без отметки въезда</p></div></div>
+          ${expected.length ? `<div class="tbl-wrap"><table><tbody>${expected.map(k => { const t = TR(k.truckId);
+            return `<tr><td>${plateHTML(t.plate)}</td><td>${esc(U(k.trusteeId).org)}<br><span class="small muted">${esc(prodOfBooking(k).name)}, ${fmtT(k.volume)}</span></td><td class="num"><button class="btn sm" data-act="gcheck" data-id="${t.plate}">Проверить</button></td></tr>`; }).join('')}</tbody></table></div>` : '<p class="empty">Все ожидаемые машины уже проехали</p>'}
+        </div>
+      </div></div>`,
+    after: () => {
+      const inp = $('#g-plate');
+      const run = () => { S.gateQ = inp.value; $('#g-res').innerHTML = gateVerdict(inp.value); };
+      $('#g-btn').onclick = run;
+      inp.onkeydown = e => { if (e.key === 'Enter') run(); };
+      if (S.gateQ) $('#g-res').innerHTML = gateVerdict(S.gateQ); else inp.focus();
+    }
+  };
+};
+ACT.gcheck = plate => { S.gateQ = plate; $('#g-plate').value = plate; $('#g-res').innerHTML = gateVerdict(plate); $('#g-plate').scrollIntoView({block: 'center', behavior: 'smooth'}); };
+ACT.enter = id => { doEnter(id); };
+ACT.exit = id => { doExit(id); };
+
+function gateVerdict(q) {
+  const n = normPlate(q), T = today();
+  if (n.length < 4) return `<div class="verdict info"><h2>Введите номер полностью</h2><p>Например, А123ВС77 или номер прицепа АВ123477.</p></div>`;
+  const t = DB.trucks.find(x => x.plate === n || x.trailer === n);
+  if (!t) return `<div class="verdict bad"><h2>Машина не зарегистрирована. Въезд запрещён</h2><p>Номер ${plateHTML(n)} не найден в системе. Водителю нужно обратиться к своему доверенному лицу.</p></div>`;
+  const owner = U(t.ownerId);
+  const facts = k => `<dl class="facts">
+      <div><dt>Тягач</dt><dd>${plateHTML(t.plate, true)}</dd></div>
+      <div><dt>Прицеп</dt><dd>${plateHTML(t.trailer)}</dd></div>
+      <div><dt>Марка</dt><dd>${esc(t.model)}</dd></div>
+      <div><dt>Водитель</dt><dd>${esc(t.driver)}<br><span class="small muted">${esc(t.driverPhone)}</span></dd></div>
+      <div><dt>Организация</dt><dd>${esc(owner.org)}</dd></div>
+      ${k ? `<div><dt>Продукт</dt><dd>${prodHTML(prodOfBooking(k))}</dd></div><div><dt>Объём</dt><dd>${fmtT(k.volume)}</dd></div><div><dt>Бронь</dt><dd>${k.no} на ${fmtD(k.date)}</dd></div>` : ''}
+    </dl>`;
+  const todays = DB.bookings.filter(k => k.truckId === t.id && k.date === T);
+  const inside = todays.find(k => k.status === 'entered') || DB.bookings.find(k => k.truckId === t.id && k.status === 'entered');
+  if (inside) return `<div class="verdict info"><h2>Уже на территории, пост ${inside.post}</h2><p>Въехала в ${fmtTime(inside.enteredAt)}, ${dur(minsBetween(inside.enteredAt, nowStr()))} назад.</p>${facts(inside)}<button class="btn go big" data-act="exit" data-id="${inside.id}">Выехала</button></div>`;
+  const bk = todays.find(k => k.status === 'booked');
+  if (bk) {
+    const terr = onTerritory();
+    const load = [1, 2].map(p => terr.filter(x => x.post === p).length);
+    const post = load[0] <= load[1] ? 1 : 2;
+    return `<div class="verdict ok"><h2>Бронь найдена. Въезд разрешён</h2><p>Сверьте номер, прицеп и водителя с документами. После нажатия машина встанет в очередь поста ${post} (${load[post - 1] ? 'перед ней ' + load[post - 1] : 'пост свободен'}).</p>${facts(bk)}<button class="btn go big" data-act="enter" data-id="${bk.id}">Въехала</button></div>`;
+  }
+  const exited = todays.find(k => k.status === 'exited');
+  const next = DB.bookings.filter(k => k.truckId === t.id && k.status === 'booked' && k.date > T).sort((a, b) => a.date.localeCompare(b.date))[0];
+  return `<div class="verdict warn"><h2>Нет брони на сегодня. Въезд запрещён</h2><p>${exited ? `Сегодня машина уже выехала в ${fmtTime(exited.exitedAt)}. ` : ''}${next ? `Ближайшая бронь: ${next.no} на ${fmtD(next.date)}, ${esc(prodOfBooking(next).name)} ${fmtT(next.volume)}.` : 'Будущих броней нет.'}</p>${facts(null)}</div>`;
+}
+
+/* ================= booking modal (trustee/admin) ================= */
+function bookModal(batchId) {
+  const b = BT(batchId), p = P(b.productId), s = batchStats(b), st = DB.settings, T = today();
+  const isAdmin = CUR.role === 'admin';
+  const trustees = DB.users.filter(u => u.role === 'trustee' && !u.blocked);
+  const minDate = b.availableFrom > T ? b.availableFrom : T, maxDate = addDays(T, st.bookAhead);
+  const truckOpts = uidT => opts(DB.trucks.filter(t => t.ownerId === uidT && t.active).map(t => [t.id, `${t.plate}, ${t.model}, ${t.tank} т`]));
+  const firstT = isAdmin ? trustees[0]?.id : CUR.id;
+  openModal({
+    title: 'Бронирование',
+    body: `<p style="margin-bottom:14px">${prodHTML(p)} <span class="muted">партия ${b.no}, свободно ${fmtT(s.free)}</span></p>
+      ${isAdmin ? fld('Доверенное лицо', `<select id="bk-tr">${opts(trustees.map(u => [u.id, u.org + (isBanned(u) ? ' (ограничен)' : '')]), firstT)}</select>`) : ''}
+      ${fld('Машина', `<select id="bk-truck">${truckOpts(firstT)}</select>`, 'Объём брони не может быть больше объёма цистерны')}
+      <div class="form-row">
+        ${fld('Дата приезда', `<input type="date" id="bk-date" min="${minDate}" max="${maxDate}" value="${minDate}">`, 'Запись на день, въезд в порядке живой очереди')}
+        ${fld('Объём, т', `<input type="number" id="bk-vol" min="1" step="0.5">`)}
+      </div>
+      <p class="small muted" id="bk-lim"></p>`,
+    ok: 'Забронировать',
+    mount: () => {
+      const upd = () => {
+        const tr = isAdmin ? val('bk-tr') : CUR.id, truck = TR(val('bk-truck'));
+        const left = st.limit - trusteeActive(tr);
+        $('#bk-lim').textContent = `Лимит доверенного лица: занято ${fmtT(trusteeActive(tr))} из ${st.limit} т, доступно ${fmtT(Math.max(0, left))}.`;
+        if (truck) $('#bk-vol').value = Math.max(0, Math.min(truck.tank, s.free, left));
+      };
+      if (isAdmin) $('#bk-tr').onchange = () => { $('#bk-truck').innerHTML = truckOpts(val('bk-tr')); upd(); };
+      $('#bk-truck').onchange = upd; upd();
+    },
+    onOk: () => {
+      const trId = isAdmin ? val('bk-tr') : CUR.id, tr = U(trId), truck = TR(val('bk-truck'));
+      const date = val('bk-date'), vol = parseFloat(val('bk-vol'));
+      const fresh = batchStats(b);
+      if (!tr) return 'Выберите доверенное лицо';
+      if (isBanned(tr)) return `Бронирование ограничено до ${fmtD(tr.bannedUntil)} из-за неявок`;
+      if (!truck) return 'Нет активных машин. Сначала добавьте машину';
+      if (b.status !== 'open') return 'Партия закрыта для бронирования';
+      if (!date || date < minDate || date > maxDate) return `Дата должна быть с ${fmtD(minDate)} по ${fmtD(maxDate)}`;
+      if (!(vol > 0)) return 'Укажите объём';
+      if (vol > truck.tank) return `Объём больше цистерны машины (${truck.tank} т)`;
+      if (vol > fresh.free) return `Свободно только ${fmtT(fresh.free)}`;
+      if (trusteeActive(trId) + vol > st.limit) return `Превышен лимит ${st.limit} т на доверенное лицо: занято ${fmtT(trusteeActive(trId))}`;
+      if (DB.bookings.some(k => k.truckId === truck.id && k.date === date && ACTIVE.includes(k.status))) return `У машины ${truck.plate} уже есть бронь на ${fmtD(date)}`;
+      if (DB.bookings.filter(k => k.date === date && ACTIVE.includes(k.status) || (k.date === date && k.status === 'exited')).length >= st.dailyTrucks) return `На ${fmtD(date)} достигнута пропускная способность (${st.dailyTrucks} машин)`;
+      const k = {id: uid('k'), no: 'Б-' + String(++DB.seq).padStart(4, '0'), batchId: b.id, truckId: truck.id, trusteeId: trId, volume: vol, date, status: 'booked', post: null, enteredAt: null, enteredBy: null, exitedAt: null, exitedBy: null, cancelledAt: null, createdAt: nowStr()};
+      DB.bookings.push(k);
+      ev('booking', k.id, 'create', `Бронь ${k.no}: ${truck.plate}, ${p.name} ${vol} т на ${fmtD(date)}`);
+      save(); toast(`Бронь ${k.no} создана`, 'ok'); render();
+    }
+  });
+}
+ACT.book = id => bookModal(id);
+ACT.cancel = id => doCancel(id);
+
+/* ================= journal ================= */
+PAGES.journal = () => {
+  const T = today(), st = DB.settings;
+  const rows = DB.batches.filter(b => b.status === 'open').map(b => ({b, s: batchStats(b), p: P(b.productId)})).filter(x => x.s.free > 0).sort((a, b) => a.p.name.localeCompare(b.p.name, 'ru'));
+  const tr = CUR.role === 'trustee', banned = tr && isBanned(CUR), used = tr ? trusteeActive(CUR.id) : 0;
+  const canBook = (CUR.role === 'trustee' && !banned) || CUR.role === 'admin';
+  const top = tr ? `${banned ? `<div class="notice bad"><strong>Бронирование ограничено до ${fmtD(CUR.bannedUntil)}.</strong> Причина: ${DB.settings.noShowLimit} неявки за ${DB.settings.noShowPeriod} дней. Существующие брони сохраняются.</div>` : ''}
+    <div class="card" style="margin-bottom:16px"><div class="limit"><span><strong>Лимит:</strong> занято ${fmtT(used)} из ${st.limit} т</span><span class="meter"><i class="m-book" style="width:${Math.min(100, used / st.limit * 100)}%"></i></span><span class="muted small">доступно ${fmtT(Math.max(0, st.limit - used))}</span></div></div>` : '';
+  return {
+    title: 'Журнал продуктов',
+    sub: `Готовые к выдаче нефтепродукты со свободным остатком на ${fmtD(T)}`,
+    html: `${top}<div class="card">${rows.length ? rows.map(({b, s, p}) => `<div class="jr">
+        <div>${prodHTML(p)}<div class="small muted" style="margin-top:4px">Партия ${b.no}, паспорт ${esc(b.passport || '—')}</div></div>
+        <div><div class="small muted">Свободно</div><div class="jr-free">${fmtT(s.free)}</div></div>
+        <div><div class="meter" title="Отгружено и забронировано"><i class="m-ship" style="width:${s.shipped / b.quantity * 100}%"></i><i class="m-book" style="width:${s.booked / b.quantity * 100}%"></i></div>
+          <div class="small muted" style="margin-top:4px">из ${fmtT(b.quantity)}: в брони ${fmtT(s.booked)}, отгружено ${fmtT(s.shipped)}</div>
+          ${b.availableFrom > T ? `<div class="small"><span class="st st-info">выдача с ${fmtD(b.availableFrom)}</span></div>` : ''}</div>
+        <div>${canBook ? `<button class="btn primary" data-act="book" data-id="${b.id}">Забронировать</button>` : ''}</div>
+      </div>`).join('') : '<p class="empty">Сейчас нет продукта со свободным остатком</p>'}
+      <div class="legend" style="margin-top:12px"><span style="--c:var(--ok)">отгружено</span><span style="--c:var(--adr)">забронировано</span></div></div>`
+  };
+};
+
+/* ================= my bookings (trustee) ================= */
+PAGES.mybookings = () => {
+  const list = DB.bookings.filter(k => k.trusteeId === CUR.id && (S.myFilter === 'all' || ACTIVE.includes(k.status))).sort((a, b) => b.date.localeCompare(a.date) || b.no.localeCompare(a.no));
+  const used = trusteeActive(CUR.id), st = DB.settings;
+  return {
+    title: 'Мои брони',
+    sub: `Занято ${fmtT(used)} из лимита ${st.limit} т. Неявок за ${st.noShowPeriod} дней: ${noShowsPeriod(CUR)}${isBanned(CUR) ? `. Бронирование ограничено до ${fmtD(CUR.bannedUntil)}` : ''}`,
+    actions: `<div class="btn-row"><select id="my-f">${opts([['active','Активные'],['all','Все брони']], S.myFilter)}</select><a class="btn primary" href="#/journal">Новая бронь</a></div>`,
+    html: `<div class="card">${bookingTable(list, {org: false})}</div>`,
+    after: () => { $('#my-f').onchange = e => { S.myFilter = e.target.value; render(); }; }
+  };
+};
+
+function bookingTable(list, {org = true, admin = false} = {}) {
+  if (!list.length) return '<p class="empty">Броней нет</p>';
+  return `<div class="tbl-wrap"><table><thead><tr><th>№</th><th>Дата</th><th>Машина</th>${org ? '<th>Организация</th>' : ''}<th>Продукт</th><th class="num">Объём</th><th>Статус</th><th>Пост</th><th>Въезд</th><th>Выезд</th><th></th></tr></thead><tbody>
+    ${list.map(k => { const t = TR(k.truckId);
+      let act = '';
+      if (k.status === 'booked') act = `<button class="btn sm danger" data-act="cancel" data-id="${k.id}">Отменить</button>`;
+      if (admin && k.status === 'entered') act = `<button class="btn sm go" data-act="exit" data-id="${k.id}">Выехала</button>`;
+      const post = admin && k.status === 'entered' ? `<select data-post="${k.id}">${opts([[1,'Пост 1'],[2,'Пост 2']], k.post)}</select>` : (k.post ? 'Пост ' + k.post : '—');
+      return `<tr><td class="nowrap">${k.no}</td><td class="nowrap">${fmtD(k.date)}</td><td>${plateHTML(t.plate)}</td>${org ? `<td>${esc(U(k.trusteeId).org)}</td>` : ''}<td>${prodHTML(prodOfBooking(k))}</td><td class="num">${fmtT(k.volume)}</td><td>${badge(k.status)}</td><td class="nowrap">${post}</td><td class="nowrap">${fmtTime(k.enteredAt)}</td><td class="nowrap">${fmtTime(k.exitedAt)}</td><td class="num">${act}</td></tr>`; }).join('')}
+  </tbody></table></div>`;
+}
+
+/* ================= bookings (admin) ================= */
+PAGES.bookings = () => {
+  if (S.bkDate === null) S.bkDate = today();
+  const q = normPlate(S.bkQ);
+  const list = DB.bookings.filter(k => (!S.bkDate || k.date === S.bkDate) && (!S.bkStatus || k.status === S.bkStatus) && (!S.bkOrg || k.trusteeId === S.bkOrg) && (!q || TR(k.truckId).plate.includes(q) || TR(k.truckId).trailer.includes(q)))
+    .sort((a, b) => b.date.localeCompare(a.date) || (a.enteredAt || 'z').localeCompare(b.enteredAt || 'z'));
+  const cnt = s => list.filter(k => k.status === s).length;
+  const openB = DB.batches.filter(b => b.status === 'open' && batchStats(b).free > 0);
+  return {
+    title: 'Брони и очередь',
+    sub: `Найдено ${list.length}: забронировано ${cnt('booked')}, на территории ${cnt('entered')}, выехало ${cnt('exited')}, неявок ${cnt('no_show')}, отменено ${cnt('cancelled')}`,
+    actions: `<div class="btn-row"><button class="btn" id="bk-csv">Экспорт CSV</button>${openB.length ? `<button class="btn primary" id="bk-new">Новая бронь</button>` : ''}</div>`,
+    html: `<div class="card"><div class="filters">
+        <label>Дата<input type="date" id="f-date" value="${S.bkDate}"></label>
+        <label>Статус<select id="f-st">${opts([['', 'Все'], ...Object.entries(ST).map(([k, v]) => [k, v[0]])], S.bkStatus)}</select></label>
+        <label>Организация<select id="f-org">${opts([['', 'Все'], ...DB.users.filter(u => u.role === 'trustee').map(u => [u.id, u.org])], S.bkOrg)}</select></label>
+        <label>Госномер<input type="text" id="f-q" value="${esc(S.bkQ)}" placeholder="часть номера"></label>
+        <button class="btn" id="f-all">Все даты</button><button class="btn" id="f-today">Сегодня</button>
+      </div>${bookingTable(list, {admin: true})}</div>`,
+    after: () => {
+      $('#f-date').onchange = e => { S.bkDate = e.target.value; render(); };
+      $('#f-st').onchange = e => { S.bkStatus = e.target.value; render(); };
+      $('#f-org').onchange = e => { S.bkOrg = e.target.value; render(); };
+      $('#f-q').onchange = e => { S.bkQ = e.target.value; render(); };
+      $('#f-all').onclick = () => { S.bkDate = ''; render(); };
+      $('#f-today').onclick = () => { S.bkDate = today(); render(); };
+      document.querySelectorAll('[data-post]').forEach(sel => sel.onchange = () => {
+        const k = KB(sel.dataset.post); k.post = +sel.value;
+        ev('booking', k.id, 'post', `Бронь ${k.no}: пост изменён на ${k.post}`); save(); toast(`Машина переведена на пост ${k.post}`); render();
+      });
+      if ($('#bk-new')) $('#bk-new').onclick = () => openModal({title: 'Выберите партию', body: fld('Партия', `<select id="nb">${opts(openB.map(b => [b.id, `${P(b.productId).name}, ${b.no}, свободно ${fmtT(batchStats(b).free)}`]))}</select>`), ok: 'Далее', onOk: () => { const id = val('nb'); setTimeout(() => bookModal(id)); }});
+      $('#bk-csv').onclick = () => csvModal('Брони', [['№','Дата','Тягач','Прицеп','Организация','Продукт','Объём, т','Статус','Пост','Въезд','Выезд'],
+        ...list.map(k => { const t = TR(k.truckId); return [k.no, fmtD(k.date), t.plate, t.trailer, U(k.trusteeId).org, prodOfBooking(k).name, k.volume, ST[k.status][0], k.post || '', fmtDT(k.enteredAt), fmtDT(k.exitedAt)]; })]);
+    }
+  };
+};
+
+/* ================= analytics (admin) ================= */
+PAGES.analytics = () => {
+  const T = today(), per = S.anPeriod;
+  const minDate = DB.bookings.reduce((m, k) => k.date < m ? k.date : m, T);
+  const from = per === 'all' ? minDate : addDays(T, -(+per - 1));
+  const inP = k => k.date >= from && k.date <= T;
+  const ks = DB.bookings.filter(inP);
+  const entered = ks.filter(k => k.enteredAt), exited = ks.filter(k => k.status === 'exited'), noShow = ks.filter(k => k.status === 'no_show');
+  const decided = ks.filter(k => ['entered', 'exited', 'no_show'].includes(k.status)).length;
+  const stays = exited.map(k => minsBetween(k.enteredAt, k.exitedAt));
+  const avg = stays.length ? Math.round(stays.reduce((a, b) => a + b, 0) / stays.length) : null;
+  const shippedT = exited.reduce((s, k) => s + k.volume, 0);
+  const days = []; for (let d = from; d <= T; d = addDays(d, 1)) days.push(d);
+  const daily = days.map(d => ({label: d.slice(8, 10) + '.' + d.slice(5, 7), value: entered.filter(k => k.date === d).length}));
+  const byProd = DB.products.map(p => ({label: p.name, value: exited.filter(k => prodOfBooking(k).id === p.id).reduce((s, k) => s + k.volume, 0)})).filter(x => x.value > 0).sort((a, b) => b.value - a.value);
+  const hours = []; for (let h = 7; h <= 20; h++) hours.push({label: pad(h) + ':00', value: entered.filter(k => +k.enteredAt.slice(11, 13) === h).length});
+  const posts = [1, 2].map(p => ({label: 'Пост ' + p, value: entered.filter(k => k.post === p).length}));
+  const tot = posts[0].value + posts[1].value || 1;
+  const trustees = DB.users.filter(u => u.role === 'trustee').map(u => {
+    const mine = ks.filter(k => k.trusteeId === u.id);
+    const ex = mine.filter(k => k.status === 'exited'), ns = mine.filter(k => k.status === 'no_show').length;
+    const dec = mine.filter(k => ['entered', 'exited', 'no_show'].includes(k.status)).length;
+    return {u, n: mine.filter(k => k.status !== 'cancelled').length, t: ex.reduce((s, k) => s + k.volume, 0), ns, pct: dec ? Math.round(ns / dec * 100) : 0, act: trusteeActive(u.id)};
+  }).sort((a, b) => b.t - a.t);
+  const stock = DB.products.map(p => { const bs = DB.batches.filter(b => b.productId === p.id && b.status === 'open'); const s = bs.map(batchStats); return {p, free: s.reduce((a, x) => a + x.free, 0), booked: s.reduce((a, x) => a + x.booked, 0)}; });
+  const kpi = (l, v, s = '') => `<div class="kpi"><div class="kpi-l">${l}</div><div class="kpi-v">${v}</div>${s ? `<div class="kpi-s">${s}</div>` : ''}</div>`;
+  return {
+    title: 'Аналитика',
+    sub: `Период: ${fmtD(from)} – ${fmtD(T)}`,
+    actions: `<div class="btn-row"><select id="an-p">${opts([['1', 'Сегодня'], ['7', '7 дней'], ['14', '14 дней'], ['30', '30 дней'], ['all', 'Весь период']], per)}</select><button class="btn" id="an-csv">Экспорт CSV</button></div>`,
+    html: `<div class="kpis">
+        ${kpi('Въездов', entered.length, `${(entered.length / days.length).toFixed(1).replace('.', ',')} в день в среднем`)}
+        ${kpi('Отгружено', fmtT(shippedT), `${exited.length} машин`)}
+        ${kpi('Неявки', noShow.length, `${decided ? Math.round(noShow.length / decided * 100) : 0}% от состоявшихся броней`)}
+        ${kpi('Время на территории', dur(avg), 'среднее, от въезда до выезда')}
+        ${kpi('Сейчас на территории', onTerritory().length, `пост 1: ${onTerritory().filter(k => k.post === 1).length}, пост 2: ${onTerritory().filter(k => k.post === 2).length}`)}
+        ${kpi('Активные брони', DB.bookings.filter(k => k.status === 'booked').length, fmtT(DB.bookings.filter(k => k.status === 'booked').reduce((s, k) => s + k.volume, 0)))}
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="card-head"><h2>Въезды по дням</h2></div>${vbars(daily)}</div>
+        <div class="card"><div class="card-head"><h2>Отгрузка по продуктам</h2></div>${byProd.length ? hbars(byProd, fmtT) : '<p class="empty">Нет отгрузок за период</p>'}</div>
+        <div class="card"><div class="card-head"><div><h2>Въезды по часам</h2><p>Когда машины чаще всего приезжают</p></div></div>${vbars(hours)}</div>
+        <div class="card"><div class="card-head"><div><h2>Загрузка постов</h2><p>Доля въездов за период</p></div></div>${hbars(posts.map(p => ({label: p.label, value: p.value})), v => `${v} (${Math.round(v / tot * 100)}%)`)}
+          <h3 style="margin:22px 0 10px">Остатки к выдаче</h3>
+          <div class="tbl-wrap"><table><thead><tr><th>Продукт</th><th class="num">Свободно</th><th class="num">В брони</th></tr></thead><tbody>${stock.map(x => `<tr><td>${prodHTML(x.p)}</td><td class="num">${fmtT(x.free)}</td><td class="num">${fmtT(x.booked)}</td></tr>`).join('')}</tbody></table></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><div class="card-head"><div><h2>Доверенные лица</h2><p>Брони без учёта отменённых, за выбранный период</p></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Организация</th><th class="num">Броней</th><th class="num">Отгружено</th><th class="num">Неявок</th><th class="num">% неявок</th><th class="num">Сейчас в брони</th><th>Статус</th></tr></thead><tbody>
+        ${trustees.map(x => `<tr><td>${esc(x.u.org)}<br><span class="small muted">${esc(x.u.name)}</span></td><td class="num">${x.n}</td><td class="num">${fmtT(x.t)}</td><td class="num">${x.ns}</td><td class="num">${x.pct}%</td><td class="num">${fmtT(x.act)} / ${DB.settings.limit}</td><td>${isBanned(x.u) ? `<span class="st st-bad">ограничен до ${fmtD(x.u.bannedUntil)}</span>` : x.u.blocked ? '<span class="st st-grey">заблокирован</span>' : '<span class="st st-ok">активен</span>'}</td></tr>`).join('')}
+        </tbody></table></div></div>`,
+    after: () => {
+      $('#an-p').onchange = e => { S.anPeriod = e.target.value; render(); };
+      $('#an-csv').onclick = () => csvModal('Аналитика по доверенным лицам', [['Организация', 'Доверенное лицо', 'Броней', 'Отгружено, т', 'Неявок', '% неявок'], ...trustees.map(x => [x.u.org, x.u.name, x.n, x.t, x.ns, x.pct])]);
+    }
+  };
+};
+
+/* ================= batches (lab) ================= */
+PAGES.batches = () => {
+  const list = [...DB.batches].sort((a, b) => (a.status === b.status ? 0 : a.status === 'open' ? -1 : 1) || b.createdAt.localeCompare(a.createdAt));
+  return {
+    title: 'Партии продукта',
+    sub: 'Количество готового нефтепродукта на выдачу. Бронировать можно только открытые партии',
+    actions: `<button class="btn primary" data-act="batch-new">Новая партия</button>`,
+    html: `<div class="card"><div class="tbl-wrap"><table><thead><tr><th>Партия</th><th>Продукт</th><th class="num">Количество</th><th class="num">В брони</th><th class="num">Отгружено</th><th class="num">Свободно</th><th></th><th>Выдача с</th><th>Статус</th><th></th></tr></thead><tbody>
+      ${list.map(b => { const s = batchStats(b);
+        return `<tr><td class="nowrap">${b.no}<br><span class="small muted">${esc(b.passport || '')}</span></td><td>${prodHTML(P(b.productId))}</td><td class="num">${fmtT(b.quantity)}</td><td class="num">${fmtT(s.booked)}</td><td class="num">${fmtT(s.shipped)}</td><td class="num"><strong>${fmtT(s.free)}</strong></td>
+          <td><div class="meter"><i class="m-ship" style="width:${b.quantity ? s.shipped / b.quantity * 100 : 0}%"></i><i class="m-book" style="width:${b.quantity ? s.booked / b.quantity * 100 : 0}%"></i></div></td>
+          <td class="nowrap">${fmtD(b.availableFrom)}</td><td>${b.status === 'open' ? '<span class="st st-ok">открыта</span>' : '<span class="st st-grey">закрыта</span>'}</td>
+          <td class="num"><div class="btn-row" style="justify-content:flex-end"><button class="btn sm" data-act="batch-edit" data-id="${b.id}">Изменить</button><button class="btn sm" data-act="batch-toggle" data-id="${b.id}">${b.status === 'open' ? 'Закрыть' : 'Открыть'}</button></div></td></tr>`; }).join('')}
+      </tbody></table></div><div class="legend" style="margin-top:12px"><span style="--c:var(--ok)">отгружено</span><span style="--c:var(--adr)">забронировано</span></div></div>`
+  };
+};
+function batchModal(id) {
+  const b = id ? BT(id) : null, s = b ? batchStats(b) : {booked: 0, shipped: 0};
+  openModal({
+    title: b ? `Партия ${b.no}` : 'Новая партия',
+    body: `${fld('Нефтепродукт', `<select id="bf-p" ${b ? 'disabled' : ''}>${opts(DB.products.filter(p => p.active || (b && p.id === b.productId)).map(p => [p.id, p.name]), b?.productId)}</select>`)}
+      <div class="form-row">${fld('Количество, т', `<input type="number" id="bf-q" min="0" step="0.5" value="${b ? b.quantity : ''}">`, b ? `Не меньше ${fmtT(s.booked + s.shipped)} (в брони и отгружено)` : '')}
+      ${fld('Выдача с', `<input type="date" id="bf-d" value="${b ? b.availableFrom : today()}">`)}</div>
+      ${fld('Паспорт качества', `<input type="text" id="bf-pass" value="${esc(b?.passport || '')}" placeholder="ПК-0000">`)}
+      ${fld('Комментарий', `<textarea id="bf-c" rows="2">${esc(b?.comment || '')}</textarea>`)}`,
+    onOk: () => {
+      const q = parseFloat(val('bf-q')), d = val('bf-d');
+      if (!(q > 0)) return 'Укажите количество больше нуля';
+      if (!d) return 'Укажите дату начала выдачи';
+      if (b && q < s.booked + s.shipped) return `Нельзя меньше ${fmtT(s.booked + s.shipped)}: столько уже забронировано и отгружено`;
+      if (b) {
+        const old = b.quantity; Object.assign(b, {quantity: q, availableFrom: d, passport: val('bf-pass'), comment: val('bf-c')});
+        ev('batch', b.id, 'edit', `Партия ${b.no}: количество ${old} → ${q} т`);
+      } else {
+        const nb = {id: uid('b'), no: 'П-' + String(++DB.bseq).padStart(3, '0'), productId: val('bf-p'), quantity: q, availableFrom: d, passport: val('bf-pass'), comment: val('bf-c'), status: 'open', createdBy: CUR.id, createdAt: nowStr()};
+        DB.batches.push(nb); ev('batch', nb.id, 'create', `Партия ${nb.no}: ${P(nb.productId).name} ${q} т, выдача с ${fmtD(d)}`);
+      }
+      save(); toast('Партия сохранена', 'ok'); render();
+    }
+  });
+}
+ACT['batch-new'] = () => batchModal();
+ACT['batch-edit'] = id => batchModal(id);
+ACT['batch-toggle'] = id => {
+  const b = BT(id); b.status = b.status === 'open' ? 'closed' : 'open';
+  ev('batch', b.id, b.status === 'open' ? 'open' : 'close', `Партия ${b.no} ${b.status === 'open' ? 'открыта' : 'закрыта'} для бронирования`);
+  save(); toast(`Партия ${b.no} ${b.status === 'open' ? 'открыта' : 'закрыта'}`); render();
+};
+
+/* ================= trucks ================= */
+PAGES.trucks = () => {
+  const admin = CUR.role === 'admin';
+  const list = DB.trucks.filter(t => admin || t.ownerId === CUR.id).sort((a, b) => (b.active - a.active) || a.plate.localeCompare(b.plate));
+  return {
+    title: admin ? 'Машины' : 'Мои машины',
+    sub: admin ? 'Все автоцистерны, зарегистрированные доверенными лицами' : 'Карточки автоцистерн, которые можно бронировать на налив',
+    actions: `<button class="btn primary" data-act="truck-new">Добавить машину</button>`,
+    html: `<div class="card">${list.length ? `<div class="tbl-wrap"><table><thead><tr><th>Тягач</th><th>Прицеп</th><th>Марка</th><th class="num">Цистерна</th><th>Водитель</th>${admin ? '<th>Организация</th>' : ''}<th>Статус</th><th></th></tr></thead><tbody>
+      ${list.map(t => `<tr><td>${plateHTML(t.plate)}</td><td>${plateHTML(t.trailer)}</td><td>${esc(t.model)}</td><td class="num">${fmtT(t.tank)}</td><td>${esc(t.driver)}<br><span class="small muted">${esc(t.driverPhone)}</span></td>${admin ? `<td>${esc(U(t.ownerId).org)}</td>` : ''}
+        <td>${t.active ? '<span class="st st-ok">активна</span>' : '<span class="st st-grey">не используется</span>'}</td>
+        <td class="num"><div class="btn-row" style="justify-content:flex-end"><button class="btn sm" data-act="truck-edit" data-id="${t.id}">Изменить</button><button class="btn sm" data-act="truck-toggle" data-id="${t.id}">${t.active ? 'Отключить' : 'Включить'}</button></div></td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="empty">Машин пока нет. Добавьте первую, чтобы бронировать налив</p>'}</div>`
+  };
+};
+function truckModal(id) {
+  const t = id ? TR(id) : null, admin = CUR.role === 'admin';
+  const trustees = DB.users.filter(u => u.role === 'trustee');
+  openModal({
+    title: t ? `Машина ${t.plate}` : 'Новая машина',
+    body: `${admin ? fld('Доверенное лицо', `<select id="tf-o" ${t ? 'disabled' : ''}>${opts(trustees.map(u => [u.id, u.org]), t?.ownerId)}</select>`) : ''}
+      <div class="form-row">${fld('Госномер тягача', `<input type="text" id="tf-p" value="${esc(t?.plate || '')}" placeholder="А123ВС77">`)}
+      ${fld('Госномер прицепа', `<input type="text" id="tf-tr" value="${esc(t?.trailer || '')}" placeholder="АВ123477">`)}</div>
+      <div class="form-row">${fld('Марка и модель', `<input type="text" id="tf-m" value="${esc(t?.model || '')}" placeholder="КАМАЗ-65116 + ППЦ">`)}
+      ${fld('Объём цистерны, т', `<input type="number" id="tf-v" min="1" step="0.5" value="${t?.tank || ''}">`)}</div>
+      <div class="form-row">${fld('ФИО водителя', `<input type="text" id="tf-d" value="${esc(t?.driver || '')}">`)}
+      ${fld('Телефон водителя', `<input type="tel" id="tf-ph" value="${esc(t?.driverPhone || '')}" placeholder="+7">`)}</div>`,
+    onOk: () => {
+      const plate = normPlate(val('tf-p')), trailer = normPlate(val('tf-tr')), tank = parseFloat(val('tf-v'));
+      if (plate.length < 6) return 'Укажите госномер тягача полностью';
+      if (trailer && trailer.length < 6) return 'Госномер прицепа указан не полностью';
+      const clash = DB.trucks.find(x => x.id !== id && (x.plate === plate || x.trailer === plate || (trailer && (x.plate === trailer || x.trailer === trailer))));
+      if (clash) return `Номер уже зарегистрирован в системе (машина ${clash.plate})`;
+      if (!val('tf-m')) return 'Укажите марку';
+      if (!(tank > 0)) return 'Укажите объём цистерны';
+      if (!val('tf-d')) return 'Укажите водителя';
+      const data = {plate, trailer, model: val('tf-m'), tank, driver: val('tf-d'), driverPhone: val('tf-ph')};
+      if (t) { Object.assign(t, data); ev('truck', t.id, 'edit', `Изменена карточка машины ${plate}`); }
+      else { const nt = {id: uid('t'), ownerId: admin ? val('tf-o') : CUR.id, active: true, ...data}; DB.trucks.push(nt); ev('truck', nt.id, 'create', `Добавлена машина ${plate}`); }
+      save(); toast('Машина сохранена', 'ok'); render();
+    }
+  });
+}
+ACT['truck-new'] = () => truckModal();
+ACT['truck-edit'] = id => truckModal(id);
+ACT['truck-toggle'] = id => {
+  const t = TR(id);
+  if (t.active && DB.bookings.some(k => k.truckId === id && ACTIVE.includes(k.status))) return toast('У машины есть активная бронь. Сначала отмените её', 'bad');
+  t.active = !t.active; ev('truck', t.id, t.active ? 'on' : 'off', `Машина ${t.plate} ${t.active ? 'включена' : 'отключена'}`);
+  save(); render();
+};
+
+/* ================= users (admin) ================= */
+PAGES.users = () => {
+  const order = {admin: 0, guard: 1, lab: 2, trustee: 3};
+  const list = [...DB.users].sort((a, b) => order[a.role] - order[b.role] || a.name.localeCompare(b.name, 'ru'));
+  return {
+    title: 'Пользователи',
+    sub: 'Учётные записи создаёт только администратор. У одной организации одно доверенное лицо',
+    actions: `<button class="btn primary" data-act="user-new">Создать пользователя</button>`,
+    html: `<div class="card"><div class="tbl-wrap"><table><thead><tr><th>ФИО</th><th>Роль</th><th>Организация</th><th>Логин</th><th>Телефон</th><th>Статус</th><th></th></tr></thead><tbody>
+      ${list.map(u => `<tr><td>${esc(u.name)}</td><td>${ROLE[u.role]}</td><td>${esc(u.org)}${u.role === 'trustee' ? `<br><span class="small muted">неявок за ${DB.settings.noShowPeriod} дн.: ${noShowsPeriod(u)}</span>` : ''}</td><td><code>${esc(u.login)}</code></td><td class="nowrap">${esc(u.phone)}</td>
+        <td>${u.blocked ? '<span class="st st-grey">заблокирован</span>' : isBanned(u) ? `<span class="st st-bad">бронь ограничена до ${fmtD(u.bannedUntil)}</span>` : '<span class="st st-ok">активен</span>'}</td>
+        <td class="num"><div class="btn-row" style="justify-content:flex-end">
+          <button class="btn sm" data-act="user-edit" data-id="${u.id}">Изменить</button>
+          <button class="btn sm" data-act="user-pass" data-id="${u.id}">Пароль</button>
+          ${isBanned(u) ? `<button class="btn sm" data-act="user-unban" data-id="${u.id}">Снять ограничение</button>` : ''}
+          ${u.id !== CUR.id ? `<button class="btn sm ${u.blocked ? '' : 'danger'}" data-act="user-block" data-id="${u.id}">${u.blocked ? 'Разблокировать' : 'Заблокировать'}</button>` : ''}
+        </div></td></tr>`).join('')}
+      </tbody></table></div></div>`
+  };
+};
+function userModal(id) {
+  const u = id ? U(id) : null;
+  openModal({
+    title: u ? 'Изменить пользователя' : 'Новый пользователь',
+    body: `${fld('ФИО', `<input type="text" id="uf-n" value="${esc(u?.name || '')}">`)}
+      <div class="form-row">${fld('Роль', `<select id="uf-r" ${u ? 'disabled' : ''}>${opts(Object.entries(ROLE), u?.role || 'trustee')}</select>`)}
+      ${fld('Телефон', `<input type="tel" id="uf-ph" value="${esc(u?.phone || '')}" placeholder="+7">`)}</div>
+      ${fld('Организация', `<input type="text" id="uf-o" value="${esc(u?.org || '')}" placeholder="ООО «…»">`, 'Для доверенного лица обязательна и уникальна')}
+      <div class="form-row">${fld('Логин', `<input type="text" id="uf-l" value="${esc(u?.login || '')}" ${u ? 'disabled' : ''} autocomplete="off">`)}
+      ${u ? '' : fld('Пароль', `<input type="text" id="uf-p" autocomplete="off">`, 'Не короче 6 символов')}</div>`,
+    onOk: () => {
+      const role = u ? u.role : val('uf-r'), org = val('uf-o'), login = val('uf-l');
+      if (!val('uf-n')) return 'Укажите ФИО';
+      if (role === 'trustee' && !org) return 'Для доверенного лица укажите организацию';
+      if (role === 'trustee' && DB.users.some(x => x.id !== id && x.role === 'trustee' && x.org.trim().toLowerCase() === org.toLowerCase())) return 'У этой организации уже есть доверенное лицо';
+      if (!u) {
+        if (!/^[a-z0-9._-]{3,}$/i.test(login)) return 'Логин: латиница, цифры, не короче 3 символов';
+        if (DB.users.some(x => x.login.toLowerCase() === login.toLowerCase())) return 'Такой логин уже занят';
+        if (val('uf-p').length < 6) return 'Пароль не короче 6 символов';
+        const nu = {id: uid('u'), login, password: val('uf-p'), name: val('uf-n'), role, org, phone: val('uf-ph'), blocked: false, bannedUntil: null, sanctionResetAt: null, createdAt: nowStr()};
+        DB.users.push(nu); ev('user', nu.id, 'create', `Создана учётная запись ${login} (${ROLE[role]})`);
+      } else { Object.assign(u, {name: val('uf-n'), org, phone: val('uf-ph')}); ev('user', u.id, 'edit', `Изменены данные пользователя ${u.login}`); }
+      save(); toast('Пользователь сохранён', 'ok'); render();
+    }
+  });
+}
+ACT['user-new'] = () => userModal();
+ACT['user-edit'] = id => userModal(id);
+ACT['user-pass'] = id => { const u = U(id); openModal({title: `Новый пароль для ${u.login}`, body: fld('Пароль', '<input type="text" id="np" autocomplete="off">', 'Не короче 6 символов'), onOk: () => {
+  if (val('np').length < 6) return 'Пароль не короче 6 символов';
+  u.password = val('np'); ev('user', u.id, 'password', `Сброшен пароль пользователя ${u.login}`); save(); toast('Пароль изменён', 'ok'); render(); }}); };
+ACT['user-block'] = id => {
+  const u = U(id); u.blocked = !u.blocked;
+  ev('user', u.id, u.blocked ? 'block' : 'unblock', `${u.blocked ? 'Заблокирован' : 'Разблокирован'} пользователь ${u.login}`); save(); toast(u.blocked ? 'Пользователь заблокирован' : 'Пользователь разблокирован'); render();
+};
+ACT['user-unban'] = id => {
+  const u = U(id); u.bannedUntil = null; u.sanctionResetAt = today();
+  ev('user', u.id, 'unban', `${u.org}: ограничение бронирования снято администратором, счётчик неявок обнулён`); save(); toast('Ограничение снято', 'ok'); render();
+};
+
+/* ================= products (admin) ================= */
+PAGES.products = () => ({
+  title: 'Нефтепродукты',
+  sub: 'Справочник. Неактивный продукт нельзя выбрать в новой партии',
+  actions: `<button class="btn primary" data-act="prod-new">Добавить продукт</button>`,
+  html: `<div class="card"><div class="tbl-wrap"><table><thead><tr><th>Продукт</th><th>Код опасности / UN</th><th class="num">Партий</th><th class="num">Свободно</th><th>Статус</th><th></th></tr></thead><tbody>
+    ${DB.products.map(p => { const bs = DB.batches.filter(b => b.productId === p.id); const free = bs.filter(b => b.status === 'open').reduce((s, b) => s + batchStats(b).free, 0);
+      return `<tr><td>${prodHTML(p)}</td><td>${esc(p.hz)} / ${esc(p.un)}</td><td class="num">${bs.length}</td><td class="num">${fmtT(free)}</td><td>${p.active ? '<span class="st st-ok">активен</span>' : '<span class="st st-grey">не используется</span>'}</td>
+        <td class="num"><div class="btn-row" style="justify-content:flex-end"><button class="btn sm" data-act="prod-edit" data-id="${p.id}">Изменить</button><button class="btn sm" data-act="prod-toggle" data-id="${p.id}">${p.active ? 'Отключить' : 'Включить'}</button></div></td></tr>`; }).join('')}
+  </tbody></table></div></div>`
+});
+function prodModal(id) {
+  const p = id ? P(id) : null;
+  openModal({title: p ? 'Изменить продукт' : 'Новый продукт',
+    body: `${fld('Наименование', `<input type="text" id="pf-n" value="${esc(p?.name || '')}">`)}<div class="form-row">${fld('Код опасности', `<input type="text" id="pf-h" value="${esc(p?.hz || '30')}">`)}${fld('Номер ООН', `<input type="text" id="pf-u" value="${esc(p?.un || '')}">`)}</div>`,
+    onOk: () => {
+      if (!val('pf-n')) return 'Укажите наименование';
+      if (DB.products.some(x => x.id !== id && x.name.toLowerCase() === val('pf-n').toLowerCase())) return 'Такой продукт уже есть';
+      if (p) Object.assign(p, {name: val('pf-n'), hz: val('pf-h'), un: val('pf-u')});
+      else DB.products.push({id: uid('p'), name: val('pf-n'), hz: val('pf-h'), un: val('pf-u'), active: true});
+      ev('product', id || '', p ? 'edit' : 'create', `${p ? 'Изменён' : 'Добавлен'} продукт ${val('pf-n')}`); save(); render();
+    }});
+}
+ACT['prod-new'] = () => prodModal();
+ACT['prod-edit'] = id => prodModal(id);
+ACT['prod-toggle'] = id => { const p = P(id); p.active = !p.active; ev('product', id, 'toggle', `Продукт ${p.name} ${p.active ? 'включён' : 'отключён'}`); save(); render(); };
+
+/* ================= events (admin) ================= */
+PAGES.events = () => {
+  const q = S.evQ.toLowerCase();
+  const list = [...DB.events].sort((a, b) => b.ts.localeCompare(a.ts)).filter(e => !q || e.text.toLowerCase().includes(q) || (U(e.userId)?.name || 'система').toLowerCase().includes(q)).slice(0, 300);
+  return {
+    title: 'Журнал событий',
+    sub: 'Кто и когда менял данные. Показаны последние 300 записей',
+    actions: `<input type="text" id="ev-q" placeholder="Поиск: номер, пользователь, бронь" value="${esc(S.evQ)}" style="min-width:260px">`,
+    html: `<div class="card">${list.length ? `<div class="tbl-wrap"><table><thead><tr><th>Время</th><th>Пользователь</th><th>Событие</th></tr></thead><tbody>
+      ${list.map(e => { const u = U(e.userId); return `<tr><td class="nowrap">${fmtDT(e.ts)}</td><td>${u ? esc(u.name) + `<br><span class="small muted">${ROLE[u.role]}</span>` : '<span class="muted">Система</span>'}</td><td>${esc(e.text)}</td></tr>`; }).join('')}
+      </tbody></table></div>` : '<p class="empty">Ничего не найдено</p>'}</div>`,
+    after: () => { const i = $('#ev-q'); i.onchange = () => { S.evQ = i.value; render(); }; i.onkeydown = e => { if (e.key === 'Enter') { S.evQ = i.value; render(); } }; }
+  };
+};
+
+/* ================= settings (admin) ================= */
+PAGES.settings = () => {
+  const s = DB.settings;
+  return {
+    title: 'Настройки',
+    sub: 'Правила очереди, лимиты и санкции',
+    html: `<div class="grid2"><div class="card">
+        <h2 style="margin-bottom:14px">Очередь и лимиты</h2>
+        <div class="form-row">${fld('Лимит на доверенное лицо, т', `<input type="number" id="s-lim" value="${s.limit}" min="1">`, 'Сумма активных броней: забронировано и на территории')}
+        ${fld('Машин в сутки, не более', `<input type="number" id="s-day" value="${s.dailyTrucks}" min="1">`, 'Пропускная способность двух постов')}</div>
+        ${fld('Бронирование вперёд, дней', `<input type="number" id="s-ahead" value="${s.bookAhead}" min="1">`)}
+        <h2 style="margin:10px 0 14px">Санкции за неявки</h2>
+        <div class="form-row">${fld('Неявок для ограничения', `<input type="number" id="s-ns" value="${s.noShowLimit}" min="1">`)}
+        ${fld('За период, дней', `<input type="number" id="s-np" value="${s.noShowPeriod}" min="1">`)}</div>
+        ${fld('Срок ограничения, дней', `<input type="number" id="s-bd" value="${s.banDays}" min="1">`, 'Всё это время доверенное лицо не может создавать новые брони')}
+        <p class="form-err" id="s-err"></p>
+        <button class="btn primary" id="s-save">Сохранить настройки</button>
+      </div>
+      <div class="card"><h2 style="margin-bottom:10px">Демо-данные</h2>
+        <p class="muted" style="margin-bottom:14px">Система работает в браузере и хранит данные локально. Сброс вернёт исходных пользователей, партии, машины и историю движения за последние две недели.</p>
+        <button class="btn danger" data-act="reset">Сбросить демо-данные</button></div></div>`,
+    after: () => {
+      $('#s-save').onclick = () => {
+        const n = id => parseInt(val(id), 10);
+        const v = {limit: n('s-lim'), dailyTrucks: n('s-day'), bookAhead: n('s-ahead'), noShowLimit: n('s-ns'), noShowPeriod: n('s-np'), banDays: n('s-bd')};
+        if (Object.values(v).some(x => !(x > 0))) return $('#s-err').textContent = 'Все значения должны быть больше нуля';
+        Object.assign(DB.settings, v); ev('settings', '', 'edit', 'Изменены настройки очереди'); save(); toast('Настройки сохранены', 'ok'); render();
+      };
+    }
+  };
+};
+
+/* ================= start ================= */
+load();
+if (getSession() && U(getSession())) processNoShows();
+render();
+</script>
+</body>
+</html>
